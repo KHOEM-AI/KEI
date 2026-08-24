@@ -55,8 +55,5 @@ export type EditorAction =
   | { type: 'UNDO' }
   | { type: 'REDO' };
 
-// UI-level states the app can be in — used to keep switching logic
-// (keyboard mode, search, editing, saving...) in one place instead of
-// scattered booleans.
 export type AppMode = 'normal' | 'editing' | 'selecting' | 'searching';
 export type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
