@@ -1,11 +1,9 @@
 // ============================================================
-// KEI Constants — dimensions & touch targets (audit items 12, 13, 43)
+// KEI — dimensions & touch targets
 // ============================================================
-
 // Apple/Android accessibility guidelines both converge around ~44dp as
 // the minimum comfortable touch target — the *visible* key can be
-// smaller, but the tappable area (via hitSlop or container padding)
-// should not be.
+// smaller, but the tappable area (via hitSlop) should not be.
 export const MIN_TOUCH_TARGET = 44;
 
 export const KEY_HEIGHT = 42;
@@ -14,32 +12,13 @@ export const KEY_MAX_WIDTH = 44;
 export const KEY_MARGIN = 2;
 export const KEYBOARD_HORIZONTAL_PADDING = 8;
 
-export const spacing = {
-  xs: 2,
-  sm: 4,
-  md: 8,
-  lg: 12,
-  xl: 16,
-};
-
-export const radius = {
-  sm: 5,
-  md: 8,
-  lg: 15,
-};
-
-export const fontSize = {
-  xs: 9,
-  sm: 11,
-  md: 13,
-  lg: 15,
-};
+export const spacing = { xs: 2, sm: 4, md: 8, lg: 12, xl: 16 };
+export const radius = { sm: 5, md: 8, lg: 15 };
+export const fontSize = { xs: 9, sm: 11, md: 13, lg: 15 };
 
 /**
  * Computes a per-key width for a keyboard row given the screen width and
  * the longest row in the current layer, clamped to a comfortable range.
- * Replaces the old fixed `width: 34` that was cramped on small screens
- * and wasted space on large ones (audit item 13).
  */
 export function computeKeyWidth(screenWidth: number, longestRowLength: number): number {
   const usable = screenWidth - KEYBOARD_HORIZONTAL_PADDING;
