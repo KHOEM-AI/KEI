@@ -3,16 +3,14 @@
 // ============================================================
 // This is the ONE source of truth for text/selection. Keyboard buttons
 // and native TextInput events both flow through here — nothing else is
-// allowed to mutate text/anchor/caret directly. See src/storage and the
-// native-sync glue in App.tsx for how state flows in/out:
+// allowed to mutate text/anchor/caret directly.
 //
 //   Keyboard button ─┐
 //   Native TextInput ─┼─▶ dispatch(action) ─▶ editorReducer ─▶ EditorState ─▶ TextInput (controlled)
 //
-import { EditorAction, EditorState, Snapshot } from '../types';
-import { normalizeBoundary, previousGraphemeBoundary, nextGraphemeBoundary } from './unicode';
-import { previousWordBoundary, nextWordBoundary, moveVertical } from './boundaries';
-import { withHistory } from './history';
+import { EditorAction, EditorState, Snapshot } from '../../types';
+import { normalizeBoundary, previousGraphemeBoundary, nextGraphemeBoundary } from '../../utils/unicode';
+import { previousWordBoundary, nextWordBoundary, moveVertical, withHistory } from '../../storage';
 
 export const rangeOf = (s: Snapshot) => ({ start: Math.min(s.anchor, s.caret), end: Math.max(s.anchor, s.caret) });
 
@@ -123,8 +121,6 @@ export function editorReducer(state: EditorState, action: EditorAction): EditorS
     case 'CLEAR':
       return withHistory(state, { text: '', anchor: 0, caret: 0 }, 'other', action.now);
     case 'LOAD_LINE': {
-      // System state change (loading a saved line, or cancelling an
-      // edit) — never lands on the user's undo stack.
       const len = action.text.length;
       return { ...state, text: action.text, anchor: len, caret: len, lastEditOp: null };
     }
