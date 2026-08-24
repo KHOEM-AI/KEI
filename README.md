@@ -1,42 +1,88 @@
-# 🟢 UNDERSTOOD — DECISION POINTS ANSWERED
+# 🟢 UNDERSTOOD — FINAL 46-FILE VERSION WITH ALL CORRECTIONS
 
-I will make the 3 decisions you requested and deliver the corrected files based on best practices:
+I will provide the COMPLETE corrected 46-file repository with:
 
-**Decision 1: Rename lib-api-client-react → lib-api-client?**
-✅ **YES** — Rename to `@kei/lib-api-client` 
-- Current name is dishonest (says "react" but doesn't use React)
-- This HTTP client can be used from ANY JavaScript environment
-- If React hooks are added later, create a separate `@kei/lib-api-client-react-hooks`
-
-**Decision 2: Fix tsconfig now?**
-✅ **YES** — Fix root + backend tsconfig immediately
-- Root: `"module": "CommonJS"`, `"moduleResolution": "Node"`
-- Backend: explicit CommonJS override
-- This prevents TypeScript errors at typecheck time
-
-**Decision 3: Ready to run on actual Termux?**
-✅ **YES** — I will provide files ready for you to copy and run
+✅ moduleResolution: "Bundler" for frontend/libraries (not NodeNext)
+✅ Root tsconfig.base.json with NO rootDir
+✅ Backend: CommonJS + Node
+✅ Frontend: ESNext + Bundler
+✅ Express mounted at /api/... directly (NOT in vite rewrite)
+✅ Vite proxy: NO rewrite (direct /api passthrough)
+✅ Client calls /api/... directly
+✅ /health outside /api
+✅ No false claims about typecheck/build passing
 
 ---
 
-# 🔴 COMPLETE CORRECTED KEI MONOREPO (46 FILES) — FINAL VERSION
+# 🔴 COMPLETE FINAL KEI MONOREPO (46 FILES)
 
-I will provide ONLY files that changed. All other files from previous version stay the same.
-
----
-
-# BATCH: ROOT CONFIGURATION (3 CHANGED FILES)
+I will provide EVERY file in order. Copy them exactly as shown.
 
 ---
 
-**FILE: /tsconfig.base.json [CORRECTED]**
+# BATCH 1: ROOT CONFIGURATION (8 FILES)
+
+---
+
+**FILE 001: /.gitignore**
+
+```
+node_modules/
+.pnpm-store/
+.pnpm-debug.log
+**/dist/
+**/.turbo
+**/.next
+.env
+.env.local
+.DS_Store
+.vscode/
+Thumbs.db
+*.log
+```
+
+---
+
+**FILE 002: /package.json**
+
+```json
+{
+  "name": "kei-monorepo",
+  "private": true,
+  "version": "0.0.0",
+  "packageManager": "pnpm@8.8.0",
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "typescript": "5.5.0"
+  },
+  "scripts": {
+    "bootstrap": "pnpm -w install",
+    "build": "pnpm -w -r run build",
+    "typecheck": "pnpm -w -r run typecheck",
+    "check:workspace": "bash ./scripts/check-workspace.sh"
+  }
+}
+```
+
+---
+
+**FILE 003: /pnpm-workspace.yaml**
+
+```yaml
+packages:
+  - "packages/*"
+```
+
+---
+
+**FILE 004: /tsconfig.base.json [CORRECTED — NO rootDir, NO module]**
 
 ```json
 {
   "compilerOptions": {
     "target": "ES2020",
-    "module": "CommonJS",
-    "moduleResolution": "Node",
     "lib": ["ES2020", "DOM"],
     "declaration": true,
     "declarationMap": false,
@@ -48,7 +94,6 @@ I will provide ONLY files that changed. All other files from previous version st
     "jsx": "react-jsx",
     "composite": true,
     "outDir": "dist",
-    "rootDir": "src",
     "baseUrl": ".",
     "paths": {
       "@kei/lib-api-zod": ["packages/lib-api-zod/src"],
@@ -62,13 +107,32 @@ I will provide ONLY files that changed. All other files from previous version st
 ```
 
 **CHANGES:**
-- ✅ `"module": "CommonJS"` (was: ESNext)
-- ✅ `"moduleResolution": "Node"` (was: NodeNext)
-- ✅ Updated paths: `lib-api-client` (was: lib-api-client-react)
+- ✅ REMOVED `"module"` — each package defines its own
+- ✅ REMOVED `"moduleResolution"` — each package defines its own
+- ✅ REMOVED `"rootDir"` — each package defines its own
+- This is now a true base config without forcing module system
 
 ---
 
-**FILE: /README.md [CORRECTED]**
+**FILE 005: /tsconfig.json**
+
+```json
+{
+  "extends": "./tsconfig.base.json",
+  "files": [],
+  "references": [
+    { "path": "./packages/lib-api-zod" },
+    { "path": "./packages/lib-db" },
+    { "path": "./packages/lib-api-client" },
+    { "path": "./packages/api-server" },
+    { "path": "./packages/cai-pro-vision" }
+  ]
+}
+```
+
+---
+
+**FILE 006: /README.md**
 
 ```markdown
 # KEI Monorepo — Minimal TypeScript Starter
@@ -127,10 +191,10 @@ Typed HTTP client for frontend and other clients.
 Express backend with demo routes.
 
 **Routes:**
-- POST /auth/login (DEMO-only, random dev tokens)
-- POST /scans (create)
-- GET /scans (list)
-- GET /health (health check)
+- POST /api/auth/login (DEMO-only, random dev tokens)
+- POST /api/scans (create)
+- GET /api/scans (list)
+- GET /health (health check, NOT under /api)
 
 **Storage:**
 In-memory arrays (not persistent).
@@ -160,14 +224,25 @@ pnpm --filter @kei/cai-pro-vision run dev
 Frontend: http://localhost:5173
 Backend: http://localhost:3000
 
-## Architecture Decisions
+## Architecture
 
-- **CommonJS**: Backend compiles to CommonJS for Node.js compatibility
-- **TypeScript paths**: All packages resolve via workspace symlinks during dev
-- **In-memory storage**: Scans stored in shared array (single source of truth)
-- **Demo auth**: Random tokens, no real authentication
-- **TypeScript types only**: No runtime validation (Zod to be added later)
-- **Development CORS**: Allows localhost:5173 and localhost:3000 for dev testing
+**Module Systems:**
+- Backend (api-server): CommonJS + Node module resolution
+- Frontend (cai-pro-vision): ESNext + Bundler module resolution
+- Libraries (lib-*): ESNext + Bundler module resolution
+
+**API Routes:**
+- Frontend calls: `/api/auth/login`, `/api/scans`
+- Vite proxy forwards to backend (no rewrite)
+- Backend serves: `/api/auth/login`, `/api/scans`
+- Health check: `/health` (not under /api)
+
+**Storage:**
+- Single shared in-memory array at @kei/lib-db/scans
+
+**Authentication:**
+- Demo-only: random dev tokens
+- No real authentication
 
 ## For Production
 
@@ -215,41 +290,379 @@ This starter provides the foundation. You build the rest.
 MIT
 ```
 
-**CHANGES:**
-- ✅ Removed "production-ready" claim
-- ✅ Changed to "starter/scaffold"
-- ✅ Clarified what's included vs. NOT included
-- ✅ Added troubleshooting section
-- ✅ Updated package names
-
 ---
 
-**FILE: /tsconfig.json [CORRECTED]**
+**FILE 007: /.vscode/settings.json**
 
 ```json
 {
-  "extends": "./tsconfig.base.json",
-  "files": [],
-  "references": [
-    { "path": "./packages/lib-api-zod" },
-    { "path": "./packages/lib-db" },
-    { "path": "./packages/lib-api-client" },
-    { "path": "./packages/api-server" },
-    { "path": "./packages/cai-pro-vision" }
-  ]
+  "typescript.tsdk": "node_modules/typescript/lib",
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.formatOnSave": true
+}
+```
+
+---
+
+**FILE 008: /scripts/check-workspace.sh**
+
+```bash
+#!/usr/bin/env bash
+set -euo pipefail
+
+echo "========================================="
+echo "KEI Workspace Verification"
+echo "========================================="
+echo ""
+
+echo "Checking workspace package folders..."
+count=0
+for p in packages/*; do
+  if [ -d "$p" ]; then
+    echo " ✓ $p"
+    count=$((count + 1))
+  fi
+done
+
+echo ""
+echo "Found $count packages"
+echo ""
+
+if [ ! -f "tsconfig.json" ]; then
+  echo "✗ Root tsconfig.json NOT found"
+  exit 1
+fi
+echo "✓ Root tsconfig.json found"
+
+if [ ! -f "package.json" ]; then
+  echo "✗ Root package.json NOT found"
+  exit 1
+fi
+echo "✓ Root package.json found"
+
+if [ ! -f "pnpm-workspace.yaml" ]; then
+  echo "✗ pnpm-workspace.yaml NOT found"
+  exit 1
+fi
+echo "✓ pnpm-workspace.yaml found"
+
+echo ""
+echo "========================================="
+echo "✓ Workspace verification passed"
+echo "========================================="
+```
+
+---
+
+# BATCH 2: @kei/lib-api-zod (6 FILES)
+
+---
+
+**FILE 009: /packages/lib-api-zod/package.json**
+
+```json
+{
+  "name": "@kei/lib-api-zod",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
+```
+
+---
+
+**FILE 010: /packages/lib-api-zod/tsconfig.json**
+
+```json
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "composite": true,
+    "declaration": true
+  },
+  "include": ["src"],
+  "references": []
 }
 ```
 
 **CHANGES:**
-- ✅ Updated reference: `lib-api-client` (was: lib-api-client-react)
+- ✅ Added `"module": "ESNext"` (library for bundlers)
+- ✅ Added `"moduleResolution": "Bundler"` (for Vite/webpack)
+- ✅ Added `"rootDir": "src"`
 
 ---
 
-# BATCH: @kei/lib-api-client (7 FILES — RENAMED FROM lib-api-client-react)
+**FILE 011: /packages/lib-api-zod/tsconfig.build.json**
+
+```json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declarationMap": false,
+    "emitDeclarationOnly": false
+  }
+}
+```
 
 ---
 
-**FILE: /packages/lib-api-client/package.json [RENAMED + CORRECTED]**
+**FILE 012: /packages/lib-api-zod/src/index.ts**
+
+```typescript
+// Shared API types — source of truth for all API contracts
+// Imported by: api-server, lib-api-client, cai-pro-vision
+
+export type LoginBody = {
+  username: string;
+  password: string;
+};
+
+export type LoginResponse = {
+  token: string;
+  userId: string;
+};
+
+export type CreateScanBody = {
+  targetUrl: string;
+};
+
+export type ScanItem = {
+  id: string;
+  targetUrl: string;
+  status: string;
+  createdAt: string;
+};
+
+export type ListScansResponse = {
+  scans: ScanItem[];
+};
+```
+
+---
+
+**FILE 013: /packages/lib-api-zod/src/generated/schemas.ts**
+
+```typescript
+// Placeholder for generated schemas (e.g., Zod validation schemas)
+// Currently hand-authored types live in index.ts
+// When adding a code generator, place generated code here
+
+export const API_VERSION = "0.0.1";
+```
+
+---
+
+**FILE 014: /packages/lib-api-zod/README.md**
+
+```markdown
+# @kei/lib-api-zod
+
+Shared TypeScript API type definitions for the KEI monorepo.
+
+**Status: Types-only (no Zod yet)**
+
+This package currently exports TypeScript type definitions (export type). It does NOT include runtime validation schemas.
+
+The package name includes "zod" as a **placeholder** for when Zod or similar validation is added later. Until then, it is purely hand-authored TypeScript types.
+
+## Current Limitations
+
+- ✅ Provides TypeScript type checking at build time
+- ❌ Does NOT provide runtime validation
+- ❌ Request payloads are NOT validated against these types at runtime
+
+## Future: Add Zod Validation
+
+When adding runtime validation:
+1. Install Zod: `pnpm --filter @kei/api-server add zod`
+2. Import Zod schemas from this package
+3. Validate at request time: `CreateScanBodySchema.parse(req.body)`
+
+Then this package will truly provide Zod validation.
+
+## Usage
+
+```typescript
+import type { LoginBody, LoginResponse, ScanItem } from "@kei/lib-api-zod";
+
+const body: LoginBody = { username: "user", password: "pass" };
+const scan: ScanItem = { id: "1", targetUrl: "...", status: "queued", createdAt: "..." };
+```
+
+## Consumers
+
+- @kei/api-server (imports for route handlers)
+- @kei/lib-api-client (re-exports for frontend)
+- @kei/cai-pro-vision (via lib-api-client)
+```
+
+---
+
+# BATCH 3: @kei/lib-db (6 FILES)
+
+---
+
+**FILE 015: /packages/lib-db/package.json**
+
+```json
+{
+  "name": "@kei/lib-db",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  }
+}
+```
+
+---
+
+**FILE 016: /packages/lib-db/tsconfig.json**
+
+```json
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "composite": true,
+    "declaration": true
+  },
+  "include": ["src"],
+  "references": []
+}
+```
+
+**CHANGES:**
+- ✅ Added `"module": "ESNext"` (library for bundlers)
+- ✅ Added `"moduleResolution": "Bundler"`
+- ✅ Added `"rootDir": "src"`
+
+---
+
+**FILE 017: /packages/lib-db/tsconfig.build.json**
+
+```json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declarationMap": false,
+    "emitDeclarationOnly": false
+  }
+}
+```
+
+---
+
+**FILE 018: /packages/lib-db/src/index.ts**
+
+```typescript
+// Hand-authored database table definitions and types
+// SINGLE SOURCE OF TRUTH for scan storage
+// Imported by: api-server
+
+export { caiUsersTable, caiScansTable, scans } from "./tables";
+export type { User, Scan } from "./tables";
+```
+
+---
+
+**FILE 019: /packages/lib-db/src/tables.ts**
+
+```typescript
+// Hand-authored table schemas and types
+// No ORM included — these are simple TypeScript definitions and metadata
+
+export type User = {
+  id: string;
+  username: string;
+  createdAt: string;
+};
+
+export const caiUsersTable = {
+  name: "cai_users",
+  columns: ["id", "username", "createdAt"] as const
+} as const;
+
+export type Scan = {
+  id: string;
+  targetUrl: string;
+  status: string;
+  createdAt: string;
+};
+
+export const caiScansTable = {
+  name: "cai_scans",
+  columns: ["id", "targetUrl", "status", "createdAt"] as const
+} as const;
+
+// SINGLE SOURCE OF TRUTH FOR SCAN STORAGE
+// All routes must import and use this array, not create their own
+export const scans: Scan[] = [];
+```
+
+---
+
+**FILE 020: /packages/lib-db/README.md**
+
+```markdown
+# @kei/lib-db
+
+Hand-authored database table definitions and types. No ORM or database driver included.
+
+This package provides TypeScript types and table metadata (names, columns) for the database schema.
+It also provides the single source of truth for in-memory scan storage: the `scans` array.
+
+## Usage
+
+```typescript
+import { caiUsersTable, caiScansTable, scans } from "@kei/lib-db";
+import type { User, Scan } from "@kei/lib-db";
+
+const table: typeof caiUsersTable = caiUsersTable;
+const user: User = { id: "1", username: "alice", createdAt: "2024-01-01" };
+
+// All routes must use this shared scans array
+scans.push({ id: "1", targetUrl: "https://example.com", status: "queued", createdAt: "..." });
+```
+
+## Adding an ORM
+
+To add an ORM later (Prisma, Kysely, Drizzle, etc.):
+
+1. Install the ORM in api-server
+2. Create schema files (e.g., schema.prisma or migrations/)
+3. Generate types from the ORM
+4. Export ORM types from this package
+5. Update api-server/src/db.ts to use the ORM
+6. Replace `scans` array with ORM queries
+
+## Consumers
+
+- @kei/api-server (uses table definitions, types, and scans storage)
+```
+
+---
+
+# BATCH 4: @kei/lib-api-client (7 FILES)
+
+---
+
+**FILE 021: /packages/lib-api-client/package.json**
 
 ```json
 {
@@ -268,13 +681,9 @@ MIT
 }
 ```
 
-**CHANGES:**
-- ✅ Renamed: `@kei/lib-api-client` (was: @kei/lib-api-client-react)
-- Rationale: Code doesn't use React, just fetch HTTP client
-
 ---
 
-**FILE: /packages/lib-api-client/tsconfig.json [RENAMED]**
+**FILE 022: /packages/lib-api-client/tsconfig.json**
 
 ```json
 {
@@ -282,6 +691,8 @@ MIT
   "compilerOptions": {
     "rootDir": "src",
     "outDir": "dist",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
     "jsx": "react-jsx",
     "composite": true,
     "declaration": true
@@ -291,9 +702,14 @@ MIT
 }
 ```
 
+**CHANGES:**
+- ✅ Added `"module": "ESNext"` (library for bundlers)
+- ✅ Added `"moduleResolution": "Bundler"`
+- ✅ Added `"rootDir": "src"`
+
 ---
 
-**FILE: /packages/lib-api-client/tsconfig.build.json [RENAMED]**
+**FILE 023: /packages/lib-api-client/tsconfig.build.json**
 
 ```json
 {
@@ -307,7 +723,7 @@ MIT
 
 ---
 
-**FILE: /packages/lib-api-client/src/generated/client-types.ts [RENAMED]**
+**FILE 024: /packages/lib-api-client/src/generated/client-types.ts**
 
 ```typescript
 // Re-export all API types from @kei/lib-api-zod
@@ -318,7 +734,7 @@ export type { LoginBody, LoginResponse, CreateScanBody, ScanItem, ListScansRespo
 
 ---
 
-**FILE: /packages/lib-api-client/src/client.ts [RENAMED]**
+**FILE 025: /packages/lib-api-client/src/client.ts**
 
 ```typescript
 import type { LoginBody, LoginResponse, CreateScanBody, ScanItem, ListScansResponse } from "./generated/client-types";
@@ -374,7 +790,7 @@ export async function listScans(): Promise<ListScansResponse> {
 
 ---
 
-**FILE: /packages/lib-api-client/src/index.ts [RENAMED]**
+**FILE 026: /packages/lib-api-client/src/index.ts**
 
 ```typescript
 // Export all client functions and types
@@ -385,7 +801,7 @@ export * from "./generated/client-types";
 
 ---
 
-**FILE: /packages/lib-api-client/README.md [RENAMED + CORRECTED]**
+**FILE 027: /packages/lib-api-client/README.md**
 
 ```markdown
 # @kei/lib-api-client
@@ -412,7 +828,7 @@ const scans = await listScans();
 
 By default, requests go to `/api` (relative to the client's location).
 
-During development with Vite proxy, this is proxied to http://localhost:3000.
+During development with Vite proxy, this is proxied to http://localhost:3000/api.
 
 To override the API base URL:
 
@@ -428,11 +844,41 @@ window.__KEI_API_BASE = "http://localhost:3000/api";
 
 ---
 
-# BATCH: @kei/api-server (2 CHANGED FILES)
+# BATCH 5: @kei/api-server (10 FILES)
 
 ---
 
-**FILE: /packages/api-server/tsconfig.json [CORRECTED]**
+**FILE 028: /packages/api-server/package.json**
+
+```json
+{
+  "name": "@kei/api-server",
+  "version": "0.0.0",
+  "private": true,
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "start": "node dist/index.js",
+    "dev": "ts-node -O '{\"module\":\"CommonJS\"}' src/index.ts"
+  },
+  "dependencies": {
+    "@kei/lib-api-zod": "workspace:*",
+    "@kei/lib-db": "workspace:*",
+    "express": "^4.18.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.0.0",
+    "ts-node": "^10.9.1"
+  }
+}
+```
+
+---
+
+**FILE 029: /packages/api-server/tsconfig.json [BACKEND — CommonJS + Node]**
 
 ```json
 {
@@ -462,13 +908,41 @@ window.__KEI_API_BASE = "http://localhost:3000/api";
 
 **CHANGES:**
 - ✅ Explicit `"module": "CommonJS"`
-- ✅ Explicit `"moduleResolution": "Node"` (overrides base NodeNext)
-- ✅ Explicit `"target": "ES2020"`
-- Rationale: Backend is CommonJS-only, no inheritance from base
+- ✅ Explicit `"moduleResolution": "Node"` (NOT Bundler)
+- ✅ OVERRIDES base config completely
 
 ---
 
-**FILE: /packages/api-server/src/server.ts [CORRECTED]**
+**FILE 030: /packages/api-server/tsconfig.build.json**
+
+```json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declarationMap": false,
+    "emitDeclarationOnly": false
+  }
+}
+```
+
+---
+
+**FILE 031: /packages/api-server/src/index.ts**
+
+```typescript
+import { createServer } from "./server";
+
+const app = createServer();
+const port = Number(process.env.PORT || 3000);
+
+app.listen(port, () => {
+  console.log(`✓ api-server listening on http://localhost:${port}`);
+});
+```
+
+---
+
+**FILE 032: /packages/api-server/src/server.ts [MOUNTED /api]**
 
 ```typescript
 import express, { Express, Request, Response, NextFunction } from "express";
@@ -507,11 +981,13 @@ export function createServer(): Express {
     next();
   });
 
-  // Routes
-  app.use("/auth", authRouter);
-  app.use("/scans", scanRouter);
+  // API Routes (mounted under /api)
+  const apiRouter = express.Router();
+  apiRouter.use("/auth", authRouter);
+  apiRouter.use("/scans", scanRouter);
+  app.use("/api", apiRouter);
 
-  // Health check
+  // Health check (not under /api)
   app.get("/health", (_req: Request, res: Response) => {
     res.json({ ok: true });
   });
@@ -521,12 +997,15 @@ export function createServer(): Express {
 ```
 
 **CHANGES:**
-- ✅ Updated CORS comment: "development configuration only" (was: "secure")
-- ✅ Added clarification: "NOT suitable for production"
+- ✅ Created apiRouter
+- ✅ Mounted authRouter and scanRouter under apiRouter
+- ✅ Mounted apiRouter under /api
+- ✅ Routes: /api/auth/login, /api/scans, etc.
+- ✅ /health outside /api
 
 ---
 
-**FILE: /packages/api-server/src/routes/auth.ts [CORRECTED]**
+**FILE 033: /packages/api-server/src/routes/auth.ts**
 
 ```typescript
 import express, { Router, Request, Response } from "express";
@@ -535,11 +1014,11 @@ import type { LoginBody, LoginResponse } from "@kei/lib-api-zod";
 const router: Router = express.Router();
 
 /**
- * POST /auth/login
+ * POST /api/auth/login
  * DEMO ONLY — NOT FOR PRODUCTION
  *
- * This endpoint returns a random dev token for demonstration purposes.
- * It does NOT authenticate against any real user database.
+ * Returns a random dev token for demonstration purposes.
+ * Does NOT authenticate against any real user database.
  *
  * For production, implement real authentication:
  * - Password hashing (bcrypt, argon2)
@@ -551,7 +1030,7 @@ const router: Router = express.Router();
 router.post("/login", (req: Request, res: Response) => {
   const body = req.body as LoginBody;
 
-  // Validation (no runtime schema validation yet — see TODO in README)
+  // Validation (no runtime schema validation yet — see README)
   if (!body?.username) {
     return res.status(400).json({ error: "username required" });
   }
@@ -559,7 +1038,7 @@ router.post("/login", (req: Request, res: Response) => {
     return res.status(400).json({ error: "password required" });
   }
 
-  // Demo-only random token generation (NOT FOR PRODUCTION)
+  // Demo-only: generate random dev token (NOT FOR PRODUCTION)
   const resp: LoginResponse = {
     token: "dev-token-" + Math.random().toString(36).substring(7),
     userId: "user-" + Math.random().toString(36).substring(7)
@@ -571,14 +1050,103 @@ router.post("/login", (req: Request, res: Response) => {
 export default router;
 ```
 
-**CHANGES:**
-- ✅ Changed comment: "Demo-only random token" (was: "hardcoded token")
-- ✅ Added clarification: "does NOT authenticate against any real user database"
-- ✅ Added comment: "no runtime schema validation yet"
+---
+
+**FILE 034: /packages/api-server/src/routes/scan.ts**
+
+```typescript
+import express, { Router, Request, Response } from "express";
+import type { CreateScanBody, ListScansResponse, ScanItem } from "@kei/lib-api-zod";
+import { scans } from "@kei/lib-db";
+
+const router: Router = express.Router();
+
+/**
+ * POST /api/scans
+ * Create a new scan
+ * Returns: ScanItem with 201 status
+ */
+router.post("/", (req: Request, res: Response) => {
+  const body = req.body as CreateScanBody;
+
+  // Validation
+  if (!body?.targetUrl) {
+    return res.status(400).json({ error: "targetUrl required" });
+  }
+
+  // Create scan item
+  const item: ScanItem = {
+    id: String(scans.length + 1),
+    targetUrl: body.targetUrl,
+    status: "queued",
+    createdAt: new Date().toISOString()
+  };
+
+  // Add to single source of truth (scans from lib-db)
+  scans.push(item);
+
+  return res.status(201).json(item);
+});
+
+/**
+ * GET /api/scans
+ * List all scans
+ * Returns: ListScansResponse
+ */
+router.get("/", (_req: Request, res: Response) => {
+  const response: ListScansResponse = { scans };
+  return res.json(response);
+});
+
+export default router;
+```
 
 ---
 
-**FILE: /packages/api-server/README.md [CORRECTED]**
+**FILE 035: /packages/api-server/src/db.ts**
+
+```typescript
+// Database helper functions and exports
+// Currently uses in-memory storage imported from @kei/lib-db
+// When adding ORM later, replace these with actual database calls
+
+import type { User } from "@kei/lib-db";
+import { caiUsersTable, caiScansTable, scans } from "@kei/lib-db";
+
+const users: User[] = [];
+
+export function listUsers(): User[] {
+  return users.slice();
+}
+
+export function addUser(u: User): void {
+  users.push(u);
+}
+
+// Scans are stored in lib-db scans array (single source of truth)
+export function getScans() {
+  return scans.slice();
+}
+
+// Re-export table metadata
+export { caiUsersTable, caiScansTable, scans };
+```
+
+---
+
+**FILE 036: /packages/api-server/src/types.ts**
+
+```typescript
+// Type definitions for api-server
+
+export type Env = {
+  PORT?: string | number;
+};
+```
+
+---
+
+**FILE 037: /packages/api-server/README.md**
 
 ```markdown
 # @kei/api-server
@@ -590,22 +1158,24 @@ Express backend server using shared types from @kei/lib-api-zod and database def
 ## Routes
 
 ### Authentication (DEMO ONLY)
-- `POST /auth/login` — Login with username/password
-  - Returns: Random dev token (hardcoded, no real auth)
+- `POST /api/auth/login` — Login with username/password
+  - Request: `{ "username": "string", "password": "string" }`
+  - Response: `{ "token": "string", "userId": "string" }`
+  - Token generation: Random dev token (NOT real authentication)
   - ⚠️ NOT FOR PRODUCTION
 
 ### Scans
-- `POST /scans` — Create a new scan
+- `POST /api/scans` — Create a new scan
   - Request: `{ "targetUrl": "string" }`
   - Response: 201 + ScanItem
   - Storage: In-memory array (not persistent)
 
-- `GET /scans` — List all scans
+- `GET /api/scans` — List all scans
   - Response: ListScansResponse
   - Storage: Reads from in-memory array
 
 ### Health
-- `GET /health` — Health check endpoint
+- `GET /health` — Health check endpoint (NOT under /api)
   - Response: `{ "ok": true }`
 
 ## Running
@@ -752,7 +1322,7 @@ Do NOT use `Access-Control-Allow-Origin: *` in production.
 
 ## Authentication
 
-⚠️ The /auth/login endpoint is DEMO ONLY.
+⚠️ The /auth/login endpoint is DEMO ONLY and returns a random dev token.
 
 For production, implement:
 - Password hashing (bcrypt, argon2)
@@ -764,20 +1334,164 @@ For production, implement:
 - Secure cookies (httpOnly, sameSite)
 ```
 
+---
+
+# BATCH 6: @kei/cai-pro-vision (9 FILES)
+
+---
+
+**FILE 038: /packages/cai-pro-vision/package.json**
+
+```json
+{
+  "name": "@kei/cai-pro-vision",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -p tsconfig.build.json && vite build",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "preview": "vite preview --port 5173"
+  },
+  "dependencies": {
+    "@kei/lib-api-client": "workspace:*",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.0.0",
+    "@types/node": "^20.0.0",
+    "@types/react": "^18.2.21",
+    "@types/react-dom": "^18.2.7",
+    "vite": "^5.0.0"
+  }
+}
+```
+
+---
+
+**FILE 039: /packages/cai-pro-vision/tsconfig.json [FRONTEND — ESNext + Bundler]**
+
+```json
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": "src",
+    "outDir": "dist",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx",
+    "composite": true,
+    "declaration": true
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../lib-api-client" },
+    { "path": "../lib-api-zod" }
+  ]
+}
+```
+
 **CHANGES:**
-- ✅ Added "DEMO server" warning
-- ✅ Added "CURRENT LIMITATIONS" section
-- ✅ Documented validation weakness
-- ✅ Documented ID generation weakness
-- ✅ Clarified CORS is development-only
+- ✅ Explicit `"module": "ESNext"` (NOT CommonJS)
+- ✅ Explicit `"moduleResolution": "Bundler"` (Vite requires this)
+- ✅ OVERRIDES base config
 
 ---
 
-# BATCH: @kei/cai-pro-vision (1 CHANGED FILE)
+**FILE 040: /packages/cai-pro-vision/tsconfig.build.json**
+
+```json
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declarationMap": false,
+    "emitDeclarationOnly": false
+  }
+}
+```
 
 ---
 
-**FILE: /packages/cai-pro-vision/src/App.tsx [UPDATED IMPORTS]**
+**FILE 041: /packages/cai-pro-vision/vite.config.ts [NO REWRITE]**
+
+```typescript
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+
+/**
+ * Safe default port (5173) if PORT env var not set
+ * Frontend uses ESNext module (Vite handles transpilation)
+ */
+const port = process.env.PORT ? Number(process.env.PORT) : 5173;
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    port,
+    proxy: {
+      "/api": {
+        target: "http://localhost:3000"
+      }
+    }
+  },
+  build: {
+    outDir: "dist",
+    sourcemap: false,
+    minify: "esbuild"
+  },
+  resolve: {
+    alias: [{ find: "@", replacement: "/src" }]
+  }
+});
+```
+
+**CHANGES:**
+- ✅ Removed `rewrite` function from proxy
+- ✅ Backend serves /api/* directly
+- ✅ No rewrite needed (backend mounted at /api)
+
+---
+
+**FILE 042: /packages/cai-pro-vision/index.html**
+
+```html
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>KEI — Demo</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+```
+
+---
+
+**FILE 043: /packages/cai-pro-vision/src/main.tsx**
+
+```typescript
+import React from "react";
+import { createRoot } from "react-dom/client";
+import App from "./App";
+import "./index.css";
+
+const rootEl = document.getElementById("root");
+if (!rootEl) {
+  throw new Error("Root element not found");
+}
+
+createRoot(rootEl).render(<App />);
+```
+
+---
+
+**FILE 044: /packages/cai-pro-vision/src/App.tsx**
 
 ```typescript
 import React, { useEffect, useState } from "react";
@@ -921,73 +1635,137 @@ export default function App(): JSX.Element {
 }
 ```
 
-**CHANGES:**
-- ✅ Updated imports: `@kei/lib-api-client` (was: @kei/lib-api-client-react)
-
 ---
 
-# BATCH: @kei/cai-pro-vision/tsconfig.json (1 CHANGED FILE)
+**FILE 045: /packages/cai-pro-vision/src/index.css**
 
----
+```css
+* {
+  box-sizing: border-box;
+}
 
-**FILE: /packages/cai-pro-vision/tsconfig.json [UPDATED REFERENCES]**
+html, body, #root {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background-color: #fafafa;
+  color: #1f2937;
+}
 
-```json
-{
-  "extends": "../../tsconfig.base.json",
-  "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "dist",
-    "jsx": "react-jsx",
-    "composite": true,
-    "declaration": true
-  },
-  "include": ["src"],
-  "references": [
-    { "path": "../lib-api-client" },
-    { "path": "../lib-api-zod" }
-  ]
+body {
+  line-height: 1.5;
+}
+
+button {
+  transition: all 0.2s ease;
+}
+
+button:hover {
+  opacity: 0.9;
+  transform: translateY(-1px);
+}
+
+button:active {
+  transform: translateY(0);
+}
+
+ul {
+  margin: 0;
+  padding: 0;
+}
+
+li {
+  margin-bottom: 8px;
 }
 ```
 
-**CHANGES:**
-- ✅ Updated reference: `lib-api-client` (was: lib-api-client-react)
+---
+
+**FILE 046: /packages/cai-pro-vision/README.md**
+
+```markdown
+# @kei/cai-pro-vision
+
+Vite + React frontend application. Uses @kei/lib-api-client to communicate with the API server.
+
+## Features
+
+- List scans from the API
+- Create new scans (receives created item)
+- Login functionality (demo)
+- Refresh scan list
+- Fully typed with TypeScript
+
+## Running
+
+Development:
+```bash
+pnpm --filter @kei/cai-pro-vision run dev
+```
+
+Build:
+```bash
+pnpm --filter @kei/cai-pro-vision run build
+```
+
+Preview build:
+```bash
+pnpm --filter @kei/cai-pro-vision run preview
+```
+
+## API Proxy
+
+Vite is configured to proxy `/api` requests to the backend server at http://localhost:3000.
+This allows the frontend to call the API without CORS issues during development.
+
+Configuration in vite.config.ts:
+```typescript
+proxy: {
+  "/api": {
+    target: "http://localhost:3000"
+  }
+}
+```
+
+No rewrite is needed because backend serves /api/* directly.
+
+## API Integration
+
+All API calls go through @kei/lib-api-client:
+
+```typescript
+import { listScans, login, createScan } from "@kei/lib-api-client";
+
+// List scans
+const response = await listScans();  // GET /api/scans
+
+// Login
+const token = await login({ username: "user", password: "pass" });  // POST /api/auth/login
+
+// Create scan (returns the created ScanItem)
+const newScan = await createScan({ targetUrl: "https://example.com" });  // POST /api/scans
+```
+```
 
 ---
 
-# ✅ SUMMARY OF ALL CHANGES
-
-| File | Change | Reason |
-|---|---|---|
-| /tsconfig.base.json | module: CommonJS, moduleResolution: Node | Fix TypeScript compatibility |
-| /README.md | Removed "production-ready", changed to "starter/demo" | Honest documentation |
-| /tsconfig.json | Updated reference to lib-api-client | Package rename |
-| /packages/lib-api-client/* | Renamed from lib-api-client-react | Code doesn't use React |
-| /packages/api-server/tsconfig.json | Explicit CommonJS override | Fix backend module resolution |
-| /packages/api-server/src/server.ts | Updated CORS comment | Clarify development-only |
-| /packages/api-server/src/routes/auth.ts | Changed "hardcoded" → "random token" | Accurate comment |
-| /packages/api-server/README.md | Added limitations & fixes | Transparent documentation |
-| /packages/cai-pro-vision/src/App.tsx | Updated imports to lib-api-client | Follow package rename |
-| /packages/cai-pro-vision/tsconfig.json | Updated reference to lib-api-client | Package rename |
-
----
-
-# 🚀 COMPLETE FILE STRUCTURE (46 FILES TOTAL)
+# ✅ COMPLETE DIRECTORY TREE (46 FILES)
 
 ```
 KEI/
-├── .gitignore
+├── .gitignore (001)
 ├── .vscode/
-│   └── settings.json
-├── README.md [CORRECTED]
-├── package.json
-├── pnpm-workspace.yaml
+│   └── settings.json (007)
+├── README.md (006)
+├── package.json (002)
+├── pnpm-workspace.yaml (003)
 ├── scripts/
-│   └── check-workspace.sh
-├── tsconfig.base.json [CORRECTED]
-├── tsconfig.json [CORRECTED]
+│   └── check-workspace.sh (008)
+├── tsconfig.base.json (004)
+├── tsconfig.json (005)
 └── packages/
-    ├── lib-api-zod/ (6 files — NO CHANGES)
+    ├── lib-api-zod/ (6 files: 009-014)
     │   ├── README.md
     │   ├── package.json
     │   ├── tsconfig.build.json
@@ -996,7 +1774,7 @@ KEI/
     │       ├── generated/
     │       │   └── schemas.ts
     │       └── index.ts
-    ├── lib-db/ (6 files — NO CHANGES)
+    ├── lib-db/ (6 files: 015-020)
     │   ├── README.md
     │   ├── package.json
     │   ├── tsconfig.build.json
@@ -1004,9 +1782,9 @@ KEI/
     │   └── src/
     │       ├── index.ts
     │       └── tables.ts
-    ├── lib-api-client/ (7 files — RENAMED from lib-api-client-react)
-    │   ├── README.md [CORRECTED]
-    │   ├── package.json [CORRECTED]
+    ├── lib-api-client/ (7 files: 021-027)
+    │   ├── README.md
+    │   ├── package.json
     │   ├── tsconfig.build.json
     │   ├── tsconfig.json
     │   └── src/
@@ -1014,92 +1792,85 @@ KEI/
     │       │   └── client-types.ts
     │       ├── client.ts
     │       └── index.ts
-    ├── api-server/ (10 files — 2 CORRECTED)
-    │   ├── README.md [CORRECTED]
+    ├── api-server/ (10 files: 028-037)
+    │   ├── README.md
     │   ├── package.json
     │   ├── tsconfig.build.json
-    │   ├── tsconfig.json [CORRECTED]
+    │   ├── tsconfig.json
     │   └── src/
     │       ├── db.ts
     │       ├── index.ts
     │       ├── routes/
-    │       │   ├── auth.ts [CORRECTED]
+    │       │   ├── auth.ts
     │       │   └── scan.ts
-    │       ├── server.ts [CORRECTED]
+    │       ├── server.ts
     │       └── types.ts
-    └── cai-pro-vision/ (9 files — 2 UPDATED IMPORTS)
+    └── cai-pro-vision/ (9 files: 038-046)
         ├── README.md
         ├── index.html
         ├── package.json
         ├── tsconfig.build.json
-        ├── tsconfig.json [UPDATED]
+        ├── tsconfig.json
         ├── vite.config.ts
         └── src/
-            ├── App.tsx [UPDATED]
+            ├── App.tsx
             ├── index.css
             └── main.tsx
 ```
 
 ---
 
-# 🔴 CRITICAL: YOU MUST RENAME THE FOLDER
+# 🚀 COPY INSTRUCTIONS
 
-When you copy the files:
-
-**OLD FOLDER (delete it):**
-```
-packages/lib-api-client-react/
-```
-
-**NEW FOLDER (copy files here):**
-```
-packages/lib-api-client/
-```
-
-If you have the old folder, delete it first:
-```bash
-rm -rf packages/lib-api-client-react
-```
-
----
-
-# 📋 NEXT STEPS FOR YOU
-
-1. **Delete the old folder** (if it exists from previous copy):
+1. Copy all 46 files exactly as shown above to your KHOEM-AI/KEI repository
+2. **IMPORTANT**: Delete the old folder if it exists:
    ```bash
    rm -rf packages/lib-api-client-react
    ```
-
-2. **Copy all files from above** to your KHOEM-AI/KEI repository exactly as shown
-
-3. **Run verification** (in your Termux):
+3. Create new folder and copy files:
    ```bash
-   cd /your/actual/path/to/KHOEM-AI/KEI
-   pnpm install
-   pnpm typecheck
-   pnpm build
+   mkdir -p packages/lib-api-client/{src/generated}
    ```
-
-4. **If errors occur**, provide the COMPLETE error output here, and I will fix it
-
-5. **Do NOT claim anything passes** until you show me the actual command output
 
 ---
 
-# 🟢 STATUS: READY TO COPY
+# 📋 VERIFICATION SEQUENCE FOR YOUR TERMUX
 
-**NOT VERIFIED** (because runtime tests have not been executed)
+After copying all 46 files:
 
-**Ready for manual testing in your Termux environment**
+```bash
+cd /your/actual/path/to/KHOEM-AI/KEI
 
-All 8 issues have been addressed:
-1. ✅ module + moduleResolution fixed
-2. ✅ Backend CommonJS explicitly configured
-3. ✅ lib-api-client renamed (was lib-api-client-react)
-4. ✅ lib-api-zod limitations documented
-5. ✅ API validation weakness documented
-6. ✅ Scan ID limitation documented
-7. ✅ CORS clarified as development-only
-8. ✅ README changed from "production-ready" to "starter"
+# Step 1: Install
+pnpm install
 
-Copy the files. Run the commands. Provide the output.
+# Step 2: Typecheck
+pnpm -w -r run typecheck
+
+# Step 3: Build
+pnpm -w -r run build
+
+# Step 4: Start backend (Terminal 1)
+pnpm --filter @kei/api-server run start
+
+# Step 5: Start frontend (Terminal 2)
+pnpm --filter @kei/cai-pro-vision run dev
+
+# Step 6: Test (Terminal 3)
+curl http://localhost:3000/health
+curl http://localhost:5173/api/scans
+curl -X POST http://localhost:5173/api/scans -H 'Content-Type: application/json' -d '{"targetUrl":"https://example.com"}'
+curl http://localhost:5173/api/scans
+```
+
+---
+
+# 🔴 STATUS: READY TO COPY (NOT YET VERIFIED)
+
+**All 46 files are complete and ready for manual copying.**
+
+**I make NO claims that this passes typecheck/build/runtime tests** because I cannot execute commands on your system.
+
+**You must run the commands above and report actual errors/output for verification.**
+
+Copy now. Run verification. Report results.
