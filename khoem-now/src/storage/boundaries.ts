@@ -1,14 +1,19 @@
 // ============================================================
-// KEI Editor Engine — word boundaries & vertical movement
+// KEI — word boundaries & vertical movement
 // ============================================================
+// NOTE ON LOCATION: this file lives in src/storage/ only because that is
+// where it was placed in the project's current folder layout — it is
+// editor logic, not storage logic. Nothing here reads/writes disk. If
+// you later create a dedicated src/editor/ folder, this file (and
+// history.ts) belong there instead.
+//
 // Khmer script has no spaces between words. True word segmentation needs
 // a dictionary/algorithm outside the scope of this heuristic. To avoid
 // "Word ←/→" skipping an entire unspaced Khmer clause, we degrade to one
 // grapheme cluster per press once we hit Khmer script — not a real
-// "word", but it no longer overshoots. Swap `khmerWordBoundaryFn` for a
-// real segmenter later without touching call sites.
+// "word", but it no longer overshoots.
 
-import { KHMER_SCRIPT, graphemesOfLine, nextGraphemeBoundary, previousGraphemeBoundary } from './unicode';
+import { KHMER_SCRIPT, graphemesOfLine, nextGraphemeBoundary, previousGraphemeBoundary } from '../utils/unicode';
 
 const WORD_CHAR = /[\p{L}\p{N}_]/u;
 const SPACE_CHAR = /\s/;
@@ -43,7 +48,7 @@ export function nextWordBoundary(text: string, pos: number): number {
 // Note: this is *logical*-line based (split on \n). A multiline
 // TextInput can visually wrap a long logical line across several screen
 // rows; true "visual line" up/down would need layout measurement from
-// the native view and is tracked as a follow-up (see audit item 89).
+// the native view — tracked as a follow-up.
 export function moveVertical(text: string, caret: number, direction: 1 | -1): number {
   const curLineStart = caret === 0 ? 0 : (text.lastIndexOf('\n', caret - 1) + 1);
   let curLineEnd = text.indexOf('\n', caret);
