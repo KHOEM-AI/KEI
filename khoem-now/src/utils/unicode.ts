@@ -1,5 +1,5 @@
 // ============================================================
-// KEI Editor Engine — Unicode grapheme segmentation
+// KEI Utils — Unicode grapheme segmentation
 // ============================================================
 // Handles Khmer coeng/combining-mark clusters and emoji (ZWJ sequences,
 // skin-tone modifiers, flags) as single units so cursor movement and
