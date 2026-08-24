@@ -1,8 +1,9 @@
 // ============================================================
-// KEI Constants — colors (audit item 41)
+// KEI — theme colors
 // ============================================================
-// Single palette so a future light theme or contrast pass touches one
-// file instead of ~50 scattered hex literals.
+// This is the RN equivalent of a CSS ":root { --color-x }" block — one
+// palette, imported wherever a color is needed, instead of hex codes
+// scattered across every component.
 
 export const colors = {
   background: '#0f172a',
