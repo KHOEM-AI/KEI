@@ -1,5 +1,5 @@
 // ============================================================
-// KEI Data — Sigil board entries (audit item 25)
+// KEI Data — Sigil board entries
 // ============================================================
 export type Sigil = { id: string; title: string; icon: string };
 
