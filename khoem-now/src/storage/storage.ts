@@ -2,8 +2,8 @@
 // KEI Storage Service
 // ============================================================
 // Wraps AsyncStorage behind a versioned schema so future format changes
-// have somewhere to hook a migration, and debounces writes instead of
-// hitting disk on every keystroke-driven line change.
+// have somewhere to hook a migration, and debounces writes (via
+// hooks/useDebouncedSave) instead of hitting disk on every keystroke.
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { KeiStorageSchema, StoredLine } from '../types';
 
