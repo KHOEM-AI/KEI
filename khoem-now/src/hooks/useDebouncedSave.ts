@@ -1,14 +1,14 @@
 // ============================================================
-// KEI Storage — debounced save hook
+// KEI Hooks — debounced save
 // ============================================================
 import { useEffect, useRef, useState } from 'react';
 import { StoredLine, SaveStatus } from '../types';
-import { saveLines, SAVE_DEBOUNCE_MS } from './storage';
+import { saveLines, SAVE_DEBOUNCE_MS } from '../storage';
 
 /**
  * Persists `lines` a short idle period after the last change, instead of
- * on every keystroke-driven update (audit item 31). Exposes a status the
- * UI can surface ("Saving…" / "Saved" / "Save failed") per audit item 36.
+ * on every keystroke-driven update. Exposes a status the UI can surface
+ * ("Saving…" / "Saved" / "Save failed").
  */
 export function useDebouncedSave(lines: StoredLine[], loaded: boolean): SaveStatus {
   const [status, setStatus] = useState<SaveStatus>('idle');
