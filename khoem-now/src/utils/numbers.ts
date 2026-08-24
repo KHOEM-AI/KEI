@@ -1,5 +1,5 @@
 // ============================================================
-// KEI Data — Numbers layer (Arabic + Khmer digits)
+// KEI Data — Numbers layer
 // ============================================================
 import { KHMER_NUMERALS } from './khmer';
 
@@ -15,4 +15,3 @@ export const NUMBER_KEYBOARD_LAYERS = {
   khmer: [KHMER_NUMERALS],
   extra: [SUPERSCRIPT_DIGITS, SUBSCRIPT_DIGITS, COMMON_FRACTIONS],
 };
-
