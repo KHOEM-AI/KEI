@@ -1,5 +1,6 @@
 // ============================================================
-// KEI Editor Engine — undo/redo history
+// KEI — undo/redo history (editor logic; see note in boundaries.ts
+// about this folder location)
 // ============================================================
 import { EditorState, Snapshot } from '../types';
 
@@ -28,26 +29,4 @@ export function withHistory(
   const canMerge = state.lastEditOp === op && now - state.lastEditTime < HISTORY_MERGE_MS && state.past.length > 0;
   const past = canMerge ? state.past : [...state.past.slice(-(HISTORY_LIMIT - 1)), snapshot(state)];
   return { ...state, ...next, past, future: [], lastEditOp: op, lastEditTime: now };
-}
-
-export function undo(state: EditorState): EditorState {
-  if (state.past.length === 0) return state;
-  const prev = state.past[state.past.length - 1];
-  return {
-    ...state, text: prev.text, anchor: prev.anchor, caret: prev.caret,
-    past: state.past.slice(0, -1),
-    future: [snapshot(state), ...state.future].slice(0, HISTORY_LIMIT),
-    lastEditOp: null,
-  };
-}
-
-export function redo(state: EditorState): EditorState {
-  if (state.future.length === 0) return state;
-  const next = state.future[0];
-  return {
-    ...state, text: next.text, anchor: next.anchor, caret: next.caret,
-    past: [...state.past, snapshot(state)].slice(-HISTORY_LIMIT),
-    future: state.future.slice(1),
-    lastEditOp: null,
-  };
 }
