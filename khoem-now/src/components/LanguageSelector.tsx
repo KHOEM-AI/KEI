@@ -12,19 +12,24 @@ export default function LanguageSelector({
   value,
   onChange,
 }: LanguageSelectorProps) {
-  const [selectedLanguage, setSelectedLanguage] = useState(
-    value || "km",
+  const [selectedLanguage, setSelectedLanguage] = useState<string>(
+    value || "km"
   );
 
+  // Load saved language from localStorage
   useEffect(() => {
     const savedLanguage = localStorage.getItem(LANGUAGE_STORAGE_KEY);
 
-    if (savedLanguage && KEI_LANGUAGES.some((item) => item.code === savedLanguage)) {
+    if (
+      savedLanguage &&
+      KEI_LANGUAGES.some((item) => item.code === savedLanguage)
+    ) {
       setSelectedLanguage(savedLanguage);
       onChange?.(savedLanguage);
     }
   }, [onChange]);
 
+  // Keep selector synchronized with parent value
   useEffect(() => {
     if (value && value !== selectedLanguage) {
       setSelectedLanguage(value);
@@ -58,7 +63,7 @@ export default function LanguageSelector({
             key={`${item.country}-${item.code}`}
             value={item.code}
           >
-            {item.nativeName} — {item.country}
+            {item.nativeName} — {item.language} ({item.country})
           </option>
         ))}
       </select>
