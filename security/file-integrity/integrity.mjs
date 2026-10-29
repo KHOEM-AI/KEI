@@ -34,6 +34,7 @@ if (cmd === 'init') {
   const changed = Object.keys(now).filter(f => f in base && base[f] !== now[f]);
   const ok = !added.length && !missing.length && !changed.length;
   appendFileSync(LOG, JSON.stringify({ time: new Date().toISOString(), ok, added, missing, changed }) + '\n');
+  if (process.argv.includes('--json')) { console.log(JSON.stringify({ ok, added, missing, changed, checkedAt: new Date().toISOString() })); process.exit(ok ? 0 : 1); }
   if (ok) console.log('OK: no changes');
   else { console.log({ added, missing, changed }); process.exit(1); }
 } else {
