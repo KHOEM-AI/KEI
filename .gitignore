@@ -1,0 +1,6 @@
+.env
+node_modules/
+.expo/
+*.log
+security/.baseline.json
+security/.integrity.log
