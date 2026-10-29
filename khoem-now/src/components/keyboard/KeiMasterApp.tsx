@@ -15,6 +15,11 @@ import {
   TextInputSelectionChangeEventData,
 } from 'react-native';
 import * as Clipboard from 'expo-clipboard';
+import {
+  requestRecordingPermissionsAsync,
+  useAudioRecorder,
+  RecordingPresets,
+} from 'expo-audio';
 
 import { KeyboardLayout, NativeSelection, StoredLine } from '../../types';
 import { editorReducer, initialEditorState, rangeOf } from './reducer';
@@ -30,6 +35,8 @@ import { ENGLISH_ROWS_LOWER, ENGLISH_PUNCTUATION_ROW } from '../../utils/english
 import { NUMBER_KEYBOARD_LAYERS } from '../../utils/numbers';
 import { SYMBOL_KEYBOARD_LAYERS } from '../../utils/symbols';
 import { SIGIL_CATEGORIES } from '../../utils/sigils';
+import LanguageSelector from '../LanguageSelector';
+import { KEI_LANGUAGES } from '../../utils/languages';
 
 export default function KeiMasterApp() {
   const [lines, setLines] = useState<StoredLine[]>([]);
@@ -41,8 +48,12 @@ export default function KeiMasterApp() {
   const [selMode, setSelMode] = useState(false);
   const [showAdvancedBar, setShowAdvancedBar] = useState(false);
   const [showSigilBoard, setShowSigilBoard] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(0);
+  const [showControlKeys, setShowControlKeys] = useState(false);
   const [editorFocused, setEditorFocused] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const audioRecorder = useAudioRecorder(RecordingPresets.HIGH_QUALITY);
 
   const { width: windowWidth } = useWindowDimensions();
   const [editor, dispatch] = useReducer(editorReducer, initialEditorState);
@@ -78,6 +89,37 @@ export default function KeiMasterApp() {
     ensureEditorFocus();
     dispatch(action);
   }, [ensureEditorFocus]);
+
+  const handleMicrophonePress = useCallback(async () => {
+    try {
+      if (isRecording) {
+        await audioRecorder.stop();
+        setIsRecording(false);
+        return;
+      }
+
+      const permission = await requestRecordingPermissionsAsync();
+
+      if (!permission.granted) {
+        Alert.alert(
+          'ត្រូវការការអនុញ្ញាត',
+          'KEI ត្រូវការសិទ្ធិប្រើមីក្រូហ្វូន ដើម្បីថតសំឡេង។',
+        );
+        return;
+      }
+
+      await audioRecorder.prepareToRecordAsync();
+      audioRecorder.record();
+      setIsRecording(true);
+    } catch (error) {
+      setIsRecording(false);
+      console.error('KEI microphone error:', error);
+      Alert.alert(
+        'មិនអាចប្រើមីក្រូហ្វូន',
+        'សូមពិនិត្យសិទ្ធិមីក្រូហ្វូន និងសាកល្បងម្តងទៀត។',
+      );
+    }
+  }, [audioRecorder, isRecording]);
 
   const handleAddLine = () => {
     if (editor.text.trim() === '') return;
@@ -140,6 +182,12 @@ export default function KeiMasterApp() {
     dispatchWithFocus({ type: 'INSERT', text: out, now: Date.now() });
     if (shiftOn && !capsLockOn) setShiftOn(false);
   }, [keyboardLayout, capsLockOn, shiftOn, dispatchWithFocus]);
+
+  const handleLanguageChange = useCallback((id: string) => {
+    const lang = KEI_LANGUAGES.find((l) => l.id === id);
+    if (!lang) return;
+    setKeyboardLayout(lang.code === 'km' ? 'khmer' : 'english');
+  }, []);
 
   const handleCopy = async () => {
     const { start, end } = rangeOf(editor);
@@ -224,12 +272,14 @@ export default function KeiMasterApp() {
               keyExtractor={(item) => item.id}
               renderItem={({ item, index }) => (
                 <View style={[styles.lineRow, editingId === item.id && styles.lineRowEditing]}>
+
                   <TouchableOpacity
                     style={styles.lineTapArea}
                     onPress={() => handleLoadLine(item)}
                     accessibilityRole="button"
                     accessibilityLabel={`កែសម្រួលបន្ទាត់ទី ${index + 1}`}
                   >
+
                     <Text style={styles.lineNum}>{index + 1}:</Text>
                     <Text style={styles.lineText}>{item.text}</Text>
                   </TouchableOpacity>
@@ -249,25 +299,6 @@ export default function KeiMasterApp() {
           )}
         </View>
 
-        <View style={styles.toggleMenuContainer}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-            <TouchableOpacity
-              style={[styles.toggleBtn, showAdvancedBar && styles.activeBtn]}
-              onPress={() => { setShowAdvancedBar((v) => !v); setShowSigilBoard(false); }}
-              accessibilityRole="button"
-            >
-              <Text style={styles.toggleBtnText}>{showAdvancedBar ? '− បិទរបារកូដ' : '+ 📢KEI🤖😎'}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.toggleBtn, styles.sigilBtn, showSigilBoard && styles.activeBtn]}
-              onPress={() => { setShowSigilBoard((v) => !v); setShowAdvancedBar(false); }}
-              accessibilityRole="button"
-            >
-              <Text style={styles.toggleBtnText}>👁️ Sigils 🔮</Text>
-            </TouchableOpacity>
-          </ScrollView>
-        </View>
-
         {showAdvancedBar && (
           <View style={styles.advancedToolbar}>
             <View style={styles.cmdRowWrap}>
@@ -281,6 +312,7 @@ export default function KeiMasterApp() {
                   <Text style={styles.cmdText}>{item}</Text>
                 </TouchableOpacity>
               ))}
+
             </View>
             <Text style={styles.toolbarNote}>ESC / CTRL / ALT — command layer ពិតប្រាកដ គ្រោងទុកសម្រាប់ជំហានបន្ទាប់</Text>
           </View>
@@ -306,6 +338,44 @@ export default function KeiMasterApp() {
           </View>
         )}
 
+        {editingId !== null && (
+          <View style={styles.editingBanner}>
+            <Text style={styles.editingBannerText}>✏️ កំពុងកែសម្រួលបន្ទាត់</Text>
+            <TouchableOpacity onPress={handleCancelEdit} accessibilityRole="button" accessibilityLabel="បោះបង់ការកែសម្រួល">
+              <Text style={styles.editingBannerCancel}>បោះបង់</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <View style={styles.inputContainer}>
+          <TextInput
+            ref={inputRef}
+            style={styles.textInput}
+            placeholder="វាយបញ្ចូលកូដ ឬអត្ថបទថ្មីនៅទីនេះ..."
+            placeholderTextColor="#888"
+            value={editor.text}
+            onChangeText={onNativeChangeText}
+            onSelectionChange={onNativeSelectionChange}
+            selection={{ start: selStart, end: selEnd }}
+            onFocus={() => setEditorFocused(true)}
+            onBlur={() => setEditorFocused(false)}
+            showSoftInputOnFocus={false}
+            disableFullscreenUI
+            autoCorrect={false}
+            spellCheck={false}
+            scrollEnabled
+            multiline
+            accessibilityLabel="ប្រអប់វាយអត្ថបទ"
+          />
+          <TouchableOpacity
+            style={styles.addButton}
+            onPress={handleAddLine}
+            accessibilityRole="button"
+            accessibilityLabel={editingId !== null ? 'រក្សាទុកការកែសម្រួល' : 'បញ្ចូលបន្ទាត់ថ្មី'}
+          >
+            <Text style={styles.addText}>{editingId !== null ? 'រក្សាទុក ✓' : 'បញ្ចូល (+)'}</Text>
+          </TouchableOpacity>
+        </View>
         <View style={styles.keyboardContainer}>
           <View style={styles.langBar}>
             {([
@@ -324,6 +394,17 @@ export default function KeiMasterApp() {
               </TouchableOpacity>
             ))}
             <TouchableOpacity
+            style={[styles.langBtn, zoomLevel > 0 && styles.activeLang]}
+            onPress={() => setZoomLevel((v) => (v + 1) % 4)}
+            accessibilityRole="button"
+            accessibilityLabel="ពង្រីកអក្សរលើក្ដារចុច"
+            accessibilityState={{ selected: zoomLevel > 0 }}
+          >
+            <Text style={styles.langText}>
+              🔍 {zoomLevel === 0 ? 'ពង្រីក' : `×${zoomLevel + 1}`}
+            </Text>
+          </TouchableOpacity>
+          <TouchableOpacity
               style={[styles.langBtn, styles.selBtn, selMode && styles.activeSel]}
               onPress={() => setSelMode((v) => !v)}
               accessibilityRole="button"
@@ -332,7 +413,21 @@ export default function KeiMasterApp() {
             >
               <Text style={styles.langText}>🔀 SEL {selMode ? 'ON' : 'OFF'}</Text>
             </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.langBtn, showControlKeys && styles.activeLang]}
+            onPress={() => setShowControlKeys((v) => !v)}
+            accessibilityRole="button"
+            accessibilityLabel={showControlKeys ? "លាក់ប៊ូតុងបញ្ជា" : "បង្ហាញប៊ូតុងបញ្ជា"}
+            accessibilityState={{ selected: showControlKeys }}
+          >
+            <Text style={styles.langText}>
+              ⌨️ {showControlKeys ? 'លាក់' : 'បញ្ជា'}
+            </Text>
+          </TouchableOpacity>
+                      <LanguageSelector onChange={handleLanguageChange} />
           </View>
+
+
 
           {currentRows.map((row, rowIndex) => (
             <View key={rowIndex} style={styles.keyRowWrap}>
@@ -345,15 +440,38 @@ export default function KeiMasterApp() {
                   accessibilityRole="button"
                   accessibilityLabel={char}
                 >
-                  <Text style={styles.keyText}>{keyboardLayout === 'english' && (shiftOn || capsLockOn) ? char.toUpperCase() : char}</Text>
+                  <Text
+                    style={[
+                      styles.keyText,
+                      {
+                        fontSize: 20 + zoomLevel * 10,
+                        lineHeight: 24 + zoomLevel * 12,
+                      },
+                    ]}
+                  >
+                    {keyboardLayout === 'english' && (shiftOn || capsLockOn)
+                      ? char.toUpperCase()
+                      : char}
+                  </Text>
                 </TouchableOpacity>
               ))}
             </View>
           ))}
 
+          {showControlKeys && (
+          <>
           <View style={styles.keyRow}>
             <TouchableOpacity style={[styles.key, styles.modKey, shiftOn && styles.activeLang]} onPress={() => setShiftOn((v) => !v)} accessibilityRole="button" accessibilityLabel="Shift" accessibilityState={{ selected: shiftOn }}>
-              <Text style={styles.keyTextSmall}>⇧ Shift</Text>
+              <Text
+              style={[
+                styles.keyTextSmall,
+                {
+                  fontSize: 10 + zoomLevel * 3,
+                },
+              ]}
+            >
+              ⇧ Shift
+            </Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.key, styles.modKey, capsLockOn && styles.activeLang]} onPress={() => setCapsLockOn((v) => !v)} accessibilityRole="button" accessibilityLabel="Caps lock" accessibilityState={{ selected: capsLockOn }}>
               <Text style={styles.keyTextSmall}>⇪ Caps</Text>
@@ -452,9 +570,26 @@ export default function KeiMasterApp() {
             </TouchableOpacity>
           </View>
 
+          </>
+          )}
           <View style={styles.keyRow}>
             <TouchableOpacity style={[styles.key, styles.spaceKey]} onPress={() => handleKeyPress(' ')} accessibilityRole="button" accessibilityLabel="Space">
               <Text style={styles.keyText}>Space</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={[
+                styles.key,
+                styles.micKey,
+                isRecording && styles.micKeyActive,
+              ]}
+              onPress={handleMicrophonePress}
+              accessibilityRole="button"
+              accessibilityLabel={isRecording ? 'បិទមីក្រូហ្វូន' : 'បើកមីក្រូហ្វូន'}
+              accessibilityState={{ selected: isRecording }}
+            >
+              <Text style={styles.keyTextSmall}>
+                {isRecording ? '🎙️ ON' : '🎙️ MIC'}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity style={[styles.key, styles.enterKey]} onPress={() => dispatchWithFocus({ type: 'INSERT', text: '\n', now: Date.now() })} accessibilityRole="button" accessibilityLabel="បន្ទាត់ថ្មី">
               <Text style={styles.keyText}>↵ Enter</Text>
@@ -462,42 +597,10 @@ export default function KeiMasterApp() {
           </View>
         </View>
 
-        {editingId !== null && (
-          <View style={styles.editingBanner}>
-            <Text style={styles.editingBannerText}>✏️ កំពុងកែសម្រួលបន្ទាត់</Text>
-            <TouchableOpacity onPress={handleCancelEdit} accessibilityRole="button" accessibilityLabel="បោះបង់ការកែសម្រួល">
-              <Text style={styles.editingBannerCancel}>បោះបង់</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
-        <View style={styles.inputContainer}>
-          <TextInput
-            ref={inputRef}
-            style={styles.textInput}
-            placeholder="វាយបញ្ចូលកូដ ឬអត្ថបទថ្មីនៅទីនេះ..."
-            placeholderTextColor="#888"
-            value={editor.text}
-            onChangeText={onNativeChangeText}
-            onSelectionChange={onNativeSelectionChange}
-            selection={{ start: selStart, end: selEnd }}
-            onFocus={() => setEditorFocused(true)}
-            onBlur={() => setEditorFocused(false)}
-            showSoftInputOnFocus={false}
-            scrollEnabled
-            multiline
-            accessibilityLabel="ប្រអប់វាយអត្ថបទ"
-          />
-          <TouchableOpacity
-            style={styles.addButton}
-            onPress={handleAddLine}
-            accessibilityRole="button"
-            accessibilityLabel={editingId !== null ? 'រក្សាទុកការកែសម្រួល' : 'បញ្ចូលបន្ទាត់ថ្មី'}
-          >
-            <Text style={styles.addText}>{editingId !== null ? 'រក្សាទុក ✓' : 'បញ្ចូល (+)'}</Text>
-          </TouchableOpacity>
-        </View>
+
       </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
+	

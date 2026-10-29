@@ -48,7 +48,48 @@ export const styles = StyleSheet.create({
   selBtn: { backgroundColor: colors.accentAlt },
   activeSel: { backgroundColor: colors.accentAltActive, borderWidth: 1, borderColor: '#fed7aa' },
   activeLang: { backgroundColor: colors.primary },
+  magnifierBtn: {
+    backgroundColor: colors.surfaceAlt,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  magnifierActive: {
+    backgroundColor: colors.primary,
+    borderWidth: 1,
+    borderColor: colors.primaryActive,
+  },
   langText: { color: colors.textOnPrimary, fontSize: fontSize.sm, fontWeight: 'bold' },
+  magnifierPanel: {
+    marginHorizontal: 8,
+    marginBottom: 8,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    backgroundColor: '#07111f',
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    minHeight: 82,
+    maxHeight: 150,
+  },
+  magnifierLabel: {
+    color: colors.primaryActive,
+    fontSize: fontSize.xs,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  magnifierScroll: {
+    flex: 1,
+  },
+  magnifierContent: {
+    flexGrow: 1,
+    justifyContent: 'center',
+  },
+  magnifierText: {
+    color: colors.textOnPrimary,
+    fontSize: 30,
+    lineHeight: 38,
+    fontWeight: '700',
+  },
   keyRow: { flexDirection: 'row', justifyContent: 'center', marginBottom: 4, paddingHorizontal: 2 },
   keyRowWrap: { flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'center', marginBottom: 4, paddingHorizontal: 2 },
   key: { flex: 1, minWidth: 40, backgroundColor: colors.surfaceAlt, height: KEY_HEIGHT, justifyContent: 'center', alignItems: 'center', margin: 2, borderRadius: radius.sm },
@@ -58,6 +99,18 @@ export const styles = StyleSheet.create({
   spaceKey: { flex: 4 },
   keyText: { color: colors.textOnPrimary, fontSize: fontSize.lg, fontWeight: '600' },
   keyTextSmall: { color: colors.textOnPrimary, fontSize: 10, fontWeight: '700' },
+
+  micKey: {
+    backgroundColor: colors.surfaceMuted,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+
+  micKeyActive: {
+    backgroundColor: colors.danger,
+    borderWidth: 1,
+    borderColor: colors.danger,
+  },
   disabledText: { color: colors.textMuted },
   editingBanner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', backgroundColor: colors.editingHighlight, paddingHorizontal: 15, paddingVertical: 6, borderTopWidth: 1, borderColor: colors.border },
   editingBannerText: { color: colors.primaryActive, fontSize: fontSize.sm, fontWeight: 'bold' },

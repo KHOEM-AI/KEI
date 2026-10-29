@@ -5,7 +5,7 @@
 // NOTE: `id` is unique per row (used for selection); `code` is the plain
 // ISO-639-1 language code and MAY repeat across countries that share a
 // language (e.g. English in US/UK, Portuguese in Portugal/Brazil).
-// Never use `code` alone as a list key or a <select>-style value.
+// Never use `code` alone as a list key or a selection value.
 
 export interface KEILanguage {
   id: string;

@@ -8,7 +8,7 @@ import { radius, fontSize } from '../utils/dimensions';
 const LANGUAGE_STORAGE_KEY = '@kei_language';
 
 export interface LanguageSelectorProps {
-  value?: string; // a KEILanguage.id, e.g. "en-US"
+  value?: string;
   onChange?: (id: string) => void;
 }
 
@@ -16,7 +16,6 @@ export default function LanguageSelector({ value, onChange }: LanguageSelectorPr
   const [selectedId, setSelectedId] = useState<string>(value || 'km-KH');
   const [modalVisible, setModalVisible] = useState(false);
 
-  // Load saved language once on mount.
   useEffect(() => {
     (async () => {
       try {
@@ -32,7 +31,6 @@ export default function LanguageSelector({ value, onChange }: LanguageSelectorPr
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Keep selector synchronized if the parent controls `value`.
   useEffect(() => {
     if (value && value !== selectedId) setSelectedId(value);
   }, [value, selectedId]);

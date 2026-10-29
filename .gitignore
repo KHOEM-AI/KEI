@@ -4,3 +4,11 @@ node_modules/
 *.log
 security/.baseline.json
 security/.integrity.log
+*.backup*
+*.bak
+*.bak2
+*.before-*
+*.broken-backup*
+*.zoom-backup
+khoem-now/.backup/
+local-backup-*/
